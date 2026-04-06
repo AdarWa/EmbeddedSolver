@@ -3,8 +3,8 @@
 //
 #pragma once
 
-#define LCD_H_RES          240
-#define LCD_V_RES          320
+#define LCD_H_RES          320
+#define LCD_V_RES          240
 #define LCD_BITS_PIXEL     16
 #define LCD_BUF_LINES      30
 #define LCD_DOUBLE_BUFFER  1
@@ -29,10 +29,10 @@
 #define LCD_BACKLIGHT_LEDC_CH  (1)
 
 
-#define TOUCH_X_RES_MIN 20
-#define TOUCH_X_RES_MAX 215
-#define TOUCH_Y_RES_MIN 20
-#define TOUCH_Y_RES_MAX 285
+#define TOUCH_Y_RES_MIN 17
+#define TOUCH_Y_RES_MAX 290
+#define TOUCH_X_RES_MIN 10
+#define TOUCH_X_RES_MAX 220
 
 #define TOUCH_CLOCK_HZ ESP_LCD_TOUCH_SPI_CLOCK_HZ
 #define TOUCH_SPI      SPI3_HOST

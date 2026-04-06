@@ -159,9 +159,9 @@ lv_display_t* app_lvgl_init(esp_lcd_panel_io_handle_t lcd_io, esp_lcd_panel_hand
         .vres = LCD_V_RES,
         .monochrome = false,
         .rotation = {
-            .swap_xy = false,
-            .mirror_x = LCD_MIRROR_X,
-            .mirror_y = LCD_MIRROR_Y,
+            .swap_xy = true,
+            .mirror_x = true,
+            .mirror_y = true,
         },
         .flags = {
             .buff_dma = true,

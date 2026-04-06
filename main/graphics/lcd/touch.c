@@ -14,20 +14,27 @@
 static const char* TAG = "touch";
 
 static uint16_t map(uint16_t n, uint16_t in_min, uint16_t in_max, uint16_t out_min, uint16_t out_max) {
-    uint16_t value = (n - in_min) * (out_max - out_min) / (in_max - in_min);
-    return (value < out_min) ? out_min : ((value > out_max) ? out_max : value);
+    if (n <= in_min) return out_min;
+    if (n >= in_max) return out_max;
+
+    uint32_t range_in = in_max - in_min;
+    uint32_t range_out = out_max - out_min;
+    uint32_t delta_in = n - in_min;
+
+    return out_min + (delta_in * range_out / range_in);
 }
 
 static void process_coordinates(esp_lcd_touch_handle_t tp, uint16_t* x, uint16_t* y, uint16_t* strength,
                                 uint8_t* point_num, uint8_t max_point_num) {
-    ESP_LOGI(TAG, "x: %d, y: %d", *x, *y);
-    float normalized_x = (float)(*x - TOUCH_X_RES_MIN) / (TOUCH_X_RES_MAX - TOUCH_X_RES_MIN);
-    float normalized_y = (float)(*y - TOUCH_Y_RES_MIN) / (TOUCH_Y_RES_MAX - TOUCH_Y_RES_MIN);
-
-    uint16_t final_x = normalized_y * LCD_H_RES;
-    uint16_t final_y = (1.0 - normalized_x) * LCD_V_RES;
-    *x = TOUCH_X_RES_MAX - final_x;
-    *y = final_y;
+    int temp = *x;
+    *x = *y;
+    *y = temp;
+    *x = TOUCH_X_RES_MAX - *x + TOUCH_X_RES_MIN;
+    *y = TOUCH_Y_RES_MAX - *y + TOUCH_Y_RES_MIN;
+    *x = map(*x, TOUCH_X_RES_MIN, TOUCH_X_RES_MAX, 0, LCD_H_RES);
+    *y = map(*y, TOUCH_Y_RES_MIN, TOUCH_Y_RES_MAX, 0, LCD_V_RES);
+    *strength *= 10;
+    ESP_LOGI(TAG, "%d, %d", *x, *y);
 }
 
 esp_err_t touch_init(esp_lcd_touch_handle_t* tp) {
@@ -72,9 +79,9 @@ esp_err_t touch_init(esp_lcd_touch_handle_t* tp) {
         .levels = {.reset = 0, .interrupt = 0},
         .flags =
         {
-            .swap_xy = false,
-            .mirror_x = LCD_MIRROR_X,
-            .mirror_y = LCD_MIRROR_Y,
+            .swap_xy = true,
+            .mirror_x = false,
+            .mirror_y = false,
         },
         .process_coordinates = process_coordinates,
         .interrupt_callback = NULL
