@@ -45,7 +45,6 @@ esp_err_t configureLvgl() {
     }
 
     ESP_ERROR_CHECK(lcd_display_brightness_set(50));
-    // ESP_ERROR_CHECK(lcd_display_rotate(lvgl_display, LV_DISPLAY_ROTATION_90));
 
     return ESP_OK;
 }

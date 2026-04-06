@@ -34,7 +34,6 @@ static void process_coordinates(esp_lcd_touch_handle_t tp, uint16_t* x, uint16_t
     *x = map(*x, TOUCH_X_RES_MIN, TOUCH_X_RES_MAX, 0, LCD_H_RES);
     *y = map(*y, TOUCH_Y_RES_MIN, TOUCH_Y_RES_MAX, 0, LCD_V_RES);
     *strength *= 10;
-    ESP_LOGI(TAG, "%d, %d", *x, *y);
 }
 
 esp_err_t touch_init(esp_lcd_touch_handle_t* tp) {
