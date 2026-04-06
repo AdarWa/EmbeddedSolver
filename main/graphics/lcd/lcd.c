@@ -18,9 +18,6 @@
 #include <driver/spi_master.h>
 #include <esp_lcd_ili9341.h>
 
-#include <lvgl.h>
-#include <esp_lvgl_port.h>
-
 #include "hardware.h"
 
 static const char* TAG = "graphics/lcd";
@@ -77,16 +74,7 @@ esp_err_t lcd_display_backlight_on() {
     return lcd_display_brightness_set(100);
 }
 
-esp_err_t lcd_display_rotate(lv_display_t* lvgl_disp, lv_display_rotation_t dir) {
-    if (lvgl_disp) {
-        lv_display_set_rotation(lvgl_disp, dir);
-        return ESP_OK;
-    }
-
-    return ESP_FAIL;
-}
-
-esp_err_t app_lcd_init(esp_lcd_panel_io_handle_t* lcd_io, esp_lcd_panel_handle_t* lcd_panel) {
+esp_err_t lcd_init(esp_lcd_panel_io_handle_t* lcd_io, esp_lcd_panel_handle_t* lcd_panel) {
     const spi_bus_config_t buscfg = {
         .mosi_io_num = LCD_SPI_MOSI,
         .miso_io_num = LCD_SPI_MISO,
@@ -130,45 +118,7 @@ esp_err_t app_lcd_init(esp_lcd_panel_io_handle_t* lcd_io, esp_lcd_panel_handle_t
     return r;
 }
 
-
-lv_display_t* app_lvgl_init(esp_lcd_panel_io_handle_t lcd_io, esp_lcd_panel_handle_t lcd_panel) {
-    const lvgl_port_cfg_t lvgl_cfg = {
-        .task_priority = 4,
-        .task_stack = 8192,
-        .task_affinity = -1,
-        .task_max_sleep_ms = 500,
-        .timer_period_ms = 5
-    };
-
-    esp_err_t e = lvgl_port_init(&lvgl_cfg);
-
-    if (e != ESP_OK) {
-        ESP_LOGI(TAG, "lvgl_port_init() failed: %s", esp_err_to_name(e));
-
-        return nullptr;
-    }
-
-
-    ESP_LOGD(TAG, "Add LCD screen");
-    const lvgl_port_display_cfg_t disp_cfg = {
-        .io_handle = lcd_io,
-        .panel_handle = lcd_panel,
-        .buffer_size = LCD_DRAWBUF_SIZE,
-        .double_buffer = LCD_DOUBLE_BUFFER,
-        .hres = LCD_H_RES,
-        .vres = LCD_V_RES,
-        .monochrome = false,
-        .rotation = {
-            .swap_xy = true,
-            .mirror_x = true,
-            .mirror_y = true,
-        },
-        .flags = {
-            .buff_dma = true,
-            .buff_spiram = false,
-            .swap_bytes = true,
-        }
-    };
-
-    return lvgl_port_add_disp(&disp_cfg);
+esp_err_t lcd_draw(esp_lcd_panel_handle_t panel, int x1, int y1, int x2, int y2,
+                               const uint16_t* color_data) {
+    return esp_lcd_panel_draw_bitmap(panel, x1, y1, x2, y2, color_data);
 }
