@@ -16,12 +16,12 @@ static void draw_point(uint16_t x0, uint16_t y0) {
 
     while (x >= y) {
         for (int i = x0 - x; i <= x0 + x; i++) {
-            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 + y, 0, DRAW_BUFF_Y), BRUSH_COLOR);
-            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 - y, 0, DRAW_BUFF_Y), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 + y, 0, LCD_V_RES), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 - y, 0, LCD_V_RES), BRUSH_COLOR);
         }
         for (int i = x0 - y; i <= x0 + y; i++) {
-            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 + x, 0, DRAW_BUFF_Y), BRUSH_COLOR);
-            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 - x, 0, DRAW_BUFF_Y), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 + x, 0, LCD_V_RES), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 - x, 0, LCD_V_RES), BRUSH_COLOR);
         }
 
         if (err <= 0) {
