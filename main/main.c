@@ -13,6 +13,5 @@ void app_main(void){
     print_info();
     allocate_drawing_buff();
     clear_draw_buff();
-    fill_draw_buff(0,0, 50, 70, 0x07E0);
     start_all_tasks();
 }

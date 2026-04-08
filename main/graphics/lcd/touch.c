@@ -78,7 +78,7 @@ esp_err_t touch_init(esp_lcd_touch_handle_t* tp) {
         .levels = {.reset = 0, .interrupt = 0},
         .flags =
         {
-            .swap_xy = true,
+            .swap_xy = false,
             .mirror_x = false,
             .mirror_y = false,
         },
