@@ -16,12 +16,12 @@ static void draw_point(uint16_t x0, uint16_t y0) {
 
     while (x >= y) {
         for (int i = x0 - x; i <= x0 + x; i++) {
-            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 + y, 0, LCD_V_RES), BRUSH_COLOR);
-            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 - y, 0, LCD_V_RES), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 + y, 0, DRAW_BUFF_Y), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 - y, 0, DRAW_BUFF_Y), BRUSH_COLOR);
         }
         for (int i = x0 - y; i <= x0 + y; i++) {
-            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 + x, 0, LCD_V_RES), BRUSH_COLOR);
-            put_draw_buff(CLIP(i, 0, LCD_H_RES), CLIP(y0 - x, 0, LCD_V_RES), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 + x, 0, DRAW_BUFF_Y), BRUSH_COLOR);
+            put_draw_buff(CLIP(i, 0, DRAW_BUFF_X), CLIP(y0 - x, 0, DRAW_BUFF_Y), BRUSH_COLOR);
         }
 
         if (err <= 0) {
@@ -49,15 +49,20 @@ static void draw_line(int x0, int y0, int x1, int y1) {
     }
 }
 
-void handle_draw(esp_lcd_touch_point_data_t data) {
-
+void handle_draw(esp_lcd_touch_point_data_t data, uint8_t point_cnt) {
     static esp_lcd_touch_point_data_t last_point;
-    static bool first_touch = true;
+    static bool released = true;
 
-    if (first_touch) {
-        last_point = data;
-        first_touch = false;
+    if (point_cnt == 0) {
+        released = true;
+        return;
     }
+
+    if (released) {
+        last_point = data;
+        released = false;
+    }
+
     draw_line(last_point.x, last_point.y, data.x, data.y);
     last_point = data;
 }

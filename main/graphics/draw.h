@@ -14,4 +14,4 @@
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 
-void handle_draw(esp_lcd_touch_point_data_t data);
+void handle_draw(esp_lcd_touch_point_data_t data, uint8_t point_cnt);
