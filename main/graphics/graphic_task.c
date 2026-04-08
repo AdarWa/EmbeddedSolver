@@ -33,7 +33,6 @@ static void graphic_task(void* pvParameters) {
     static esp_lcd_touch_point_data_t touch_data[CONFIG_ESP_LCD_TOUCH_MAX_POINTS];
     static uint8_t point_cnt;
 
-    draw_bar(lcd_handle);
 
     for (;;) {
         // lock_graphic_mutex();
