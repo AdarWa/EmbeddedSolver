@@ -15,5 +15,6 @@ if(EXISTS "$ENV{IDF_PATH}/tools/cmake/project.cmake" AND NOT DESKTOP_BUILD)
 else()
     # 2. Desktop Build Logic
     project(EmbeddedSolverTraining)
+    enable_testing()
     add_subdirectory(train)
 endif()
