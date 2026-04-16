@@ -6,6 +6,8 @@
 
 #include <assert.h>
 
+#include "math/utils.h"
+
 tensor_t* conv2d_forward_pass(const tensor_t* input_tensor, tensor_t** weights, const double* biases, const int num_filters, const int kernel_size) {
     assert(input_tensor->ndim == 3);
     int in_height = input_tensor->shape[0];
