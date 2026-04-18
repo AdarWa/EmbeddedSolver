@@ -60,7 +60,7 @@ static uint8_t* parse_labels(const char* path, uint32_t* out_count) {
     return labels;
 }
 
-static mnist_image_t* parse_images(const char* path, uint32_t* out_count) {
+static mnist_raw_image_t* parse_images(const char* path, uint32_t* out_count) {
     FILE* file = fopen(path, "rb");
     if (!file) {
         LOG_E(TAG, "Failed to open image file: %s", path);
@@ -98,7 +98,7 @@ static mnist_image_t* parse_images(const char* path, uint32_t* out_count) {
 
     LOG_D(TAG, "Parsing %u images (%dx%d) from %s", count, rows, cols, path);
 
-    mnist_image_t* images = (mnist_image_t*)malloc(count * sizeof(mnist_image_t));
+    mnist_raw_image_t* images = (mnist_raw_image_t*)malloc(count * sizeof(mnist_raw_image_t));
     if (!images) {
         LOG_E(TAG, "Failed to allocate memory for images");
         fclose(file);
@@ -106,9 +106,21 @@ static mnist_image_t* parse_images(const char* path, uint32_t* out_count) {
     }
 
     // Read all pixel data directly into the structs
-    fread(images, sizeof(mnist_image_t), count, file);
+    fread(images, sizeof(mnist_raw_image_t), count, file);
     fclose(file);
     return images;
+}
+
+mnist_image_t raw_image_to_image(mnist_raw_image_t* raw_image) {
+    tensor_t* tensor = allocate_tensor((int[]){MNIST_IMAGE_ROWS, MNIST_IMAGE_COLS, 1}, 3);
+    for (int i = 0; i < MNIST_IMAGE_ROWS; i++) {
+        for (int j = 0; j < MNIST_IMAGE_COLS; j++) {
+            set_tensor_element(tensor, (int[]) {i, j, 0}, raw_image->pixels[i][j]);
+        }
+    }
+    return (mnist_image_t){
+        .pixels = tensor
+    };
 }
 
 mnist_dataset_t mnist_parse_dataset(const char* image_path, const char* label_path) {
@@ -122,12 +134,26 @@ mnist_dataset_t mnist_parse_dataset(const char* image_path, const char* label_pa
         return dataset; // Return empty/failed dataset
     }
 
-    dataset.images = parse_images(image_path, &image_count);
-    if (!dataset.images) {
+    mnist_raw_image_t* raw_images = parse_images(image_path, &image_count);
+    if (!raw_images) {
         free(dataset.labels);
         dataset.labels = NULL;
         return dataset;
     }
+    mnist_image_t* images = malloc(sizeof(mnist_image_t) * image_count);
+    if (!images) {
+        free(dataset.labels);
+        free(raw_images);
+        dataset.images = NULL;
+        return dataset;
+    }
+
+    for (int i = 0; i < image_count; i++) {
+        images[i] = raw_image_to_image(&raw_images[i]);
+    }
+    free(raw_images);
+
+    dataset.images = images;
 
     // Sanity check to ensure images and labels align
     if (image_count != label_count) {
@@ -147,6 +173,9 @@ mnist_dataset_t mnist_parse_dataset(const char* image_path, const char* label_pa
 void mnist_free_dataset(mnist_dataset_t* dataset) {
     if (dataset) {
         if (dataset->images) {
+            for (int i = 0; i < dataset->count; i++) {
+                free_tensor(dataset->images[i].pixels);
+            }
             free(dataset->images);
             dataset->images = NULL;
         }
@@ -169,7 +198,7 @@ void mnist_print_image(const mnist_image_t* image) {
 
     for (int r = 0; r < MNIST_IMAGE_ROWS; r++) {
         for (int c = 0; c < MNIST_IMAGE_COLS; c++) {
-            uint8_t pixel = image->pixels[r][c];
+            uint8_t pixel = (uint8_t)get_tensor_element(image->pixels, (int[]){r,c, 0});
             char ch = ' ';
 
             // Map pixel intensity (0-255) to ASCII characters

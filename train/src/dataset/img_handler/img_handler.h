@@ -6,11 +6,17 @@
 
 #include <stdint.h>
 
+#include "tensor/tensor.h"
+
 #define MNIST_IMAGE_ROWS 28
 #define MNIST_IMAGE_COLS 28
 
 typedef struct {
     uint8_t pixels[MNIST_IMAGE_ROWS][MNIST_IMAGE_COLS];
+} mnist_raw_image_t;
+
+typedef struct {
+    tensor_t* pixels;
 } mnist_image_t;
 
 typedef struct {
