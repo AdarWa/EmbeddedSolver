@@ -2,8 +2,6 @@
 // Created by adarw on 4/9/26.
 //
 
-#include <stdio.h>
-
 #include "dataset/img_handler/img_handler.h"
 #include "dataset/remote/remote.h"
 #include "logging/logging.h"
