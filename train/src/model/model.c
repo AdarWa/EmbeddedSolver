@@ -4,31 +4,34 @@
 
 #include "model.h"
 
-#include <stdlib.h>
-
+#include "batch.h"
 #include "dataset/img_handler/img_handler.h"
+#include "filters/conv_2d.h"
 #include "logging/logging.h"
-#include "tensor/tensor.h"
 
 static const char* TAG = "model";
 
 void train_model(model_train_config_t config, mnist_dataset_t* train) {
-    tensor_t** conv_weights = malloc(config.filter_cnt * sizeof(tensor_t*));
-    if (!conv_weights) {
-        LOG_F(TAG, "Couldn't allocate array for conv 2d filter weights!");
-        return;
-    }
-    double* conv_biases = malloc(config.filter_cnt * sizeof(double));
-    if (!conv_biases) {
-        free(conv_weights);
-        LOG_F(TAG, "Couldn't allocate array for conv 2d filter biases!");
-        return;
-    }
-    for (int i = 0; i < config.filter_cnt; i++) {
-        conv_weights[i] = allocate_tensor((int[]){config.kernel_size, config.kernel_size, config.channel_cnt}, 3);
+    weights_t weights = allocate_weights(&config);
 
+    uint32_t batch_cnt = get_batch_count(train, config.batch_size);
+    batch_t* batches = get_batches(train, config.batch_size);
+
+    LOG_I(TAG, "Allocated weights array, preparing for training");
+
+    for (int epoch = 0; epoch < config.epochs; epoch++) {
+        for (int b = 0; b < batch_cnt; b++) {
+            batch_t batch = batches[b];
+            for (int i = 0; i < batch.cnt; i++) {
+                tensor_t* input = batch.images[i].pixels;
+                tensor_t* conv_output = conv2d_forward_pass(input, weights.conv_parameters.weights, weights.conv_parameters.biases,
+                                    config.filter_cnt, config.kernel_size);
+                free_tensor(input);
+
+
+            }
+        }
     }
 
-    free(conv_weights);
-    free(conv_biases);
+    free_weights(&weights);
 }
