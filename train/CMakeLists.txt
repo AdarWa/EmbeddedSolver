@@ -40,8 +40,8 @@ foreach(test_file ${TEST_FILES})
     # Add the src directory so the test can find the headers
     target_include_directories(${test_name} PRIVATE src)
 
-    # Link only Unity, since the source files are already compiled in
-    target_link_libraries(${test_name} PRIVATE unity)
+    # Link dependencies, since the source files are already compiled in
+    target_link_libraries(${test_name} PRIVATE unity CURL::libcurl ZLIB::ZLIB)
 
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()
