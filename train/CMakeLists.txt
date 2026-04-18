@@ -8,8 +8,12 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 file(GLOB_RECURSE LIB_SRCS "src/*.c")
 list(FILTER LIB_SRCS EXCLUDE REGEX "src/main.c")
 
+find_package(CURL REQUIRED)
+find_package(ZLIB REQUIRED)
+
 # Compile main.c and all source files directly into the train executable
 add_executable(train src/main.c ${LIB_SRCS})
+target_link_libraries(train PRIVATE CURL::libcurl ZLIB::ZLIB)
 target_include_directories(train PRIVATE src)
 
 enable_testing()
