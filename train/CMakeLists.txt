@@ -3,6 +3,7 @@ project(EmbeddedSolverTraining C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+add_compile_options(-O3)
 
 # Get all source files, excluding main.c
 file(GLOB_RECURSE LIB_SRCS "src/*.c")
