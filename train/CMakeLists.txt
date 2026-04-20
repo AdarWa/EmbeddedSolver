@@ -13,7 +13,7 @@ find_package(ZLIB REQUIRED)
 
 # Compile main.c and all source files directly into the train executable
 add_executable(train src/main.c ${LIB_SRCS})
-target_link_libraries(train PRIVATE CURL::libcurl ZLIB::ZLIB)
+target_link_libraries(train PRIVATE CURL::libcurl ZLIB::ZLIB m)
 target_include_directories(train PRIVATE src)
 
 enable_testing()
@@ -41,7 +41,7 @@ foreach(test_file ${TEST_FILES})
     target_include_directories(${test_name} PRIVATE src)
 
     # Link dependencies, since the source files are already compiled in
-    target_link_libraries(${test_name} PRIVATE unity CURL::libcurl ZLIB::ZLIB)
+    target_link_libraries(${test_name} PRIVATE unity CURL::libcurl ZLIB::ZLIB m)
 
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()
