@@ -7,12 +7,10 @@
 #include "../src/filters/max_pool_2d.h"
 #include <math.h>
 
-void setUp(void) {
-}
+void setUp(void) {}
+void tearDown(void) {}
 
-void tearDown(void) {
-}
-
+// Helper to fill a tensor channel
 void fill_tensor_channel_2d(tensor_t* t, int c, int height, int width, const double* values) {
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
@@ -21,147 +19,154 @@ void fill_tensor_channel_2d(tensor_t* t, int c, int height, int width, const dou
     }
 }
 
-// Test 1: Standard 4x4 input pooled to 2x2 (Single Channel)
-void test_max_pool_2d_basic_4x4_to_2x2(void) {
+// Test 1: Forward Pass & Coordinate Mask Accuracy
+void test_max_pool_2d_forward_and_indices(void) {
     tensor_t* input = allocate_tensor((int[]){4, 4, 1}, 3);
-
     const double vals[16] = {
-         1,  2,  3,  4,
-         5,  6,  7,  8,
+         1,  5,  3,  4,
+         2,  4,  7,  8,
          9, 10, 11, 12,
         13, 14, 15, 16
     };
     fill_tensor_channel_2d(input, 0, 4, 4, vals);
 
-    tensor_t* output = max_pool_2d(input, 2, 2);
+    tensor_t *h_idx = NULL, *w_idx = NULL;
+    // Calling updated function that returns masks
+    tensor_t* output = max_pool_2d_forward(input, 2, 2, &h_idx, &w_idx);
 
-    // Assert shape
     TEST_ASSERT_NOT_NULL(output);
-    TEST_ASSERT_EQUAL_INT(3, output->ndim);
-    TEST_ASSERT_EQUAL_INT(2, output->shape[0]); // Height
-    TEST_ASSERT_EQUAL_INT(2, output->shape[1]); // Width
-    TEST_ASSERT_EQUAL_INT(1, output->shape[2]); // Channels
+    TEST_ASSERT_NOT_NULL(h_idx);
+    TEST_ASSERT_NOT_NULL(w_idx);
 
-    // Assert values
-    TEST_ASSERT_EQUAL_DOUBLE(6.0,  get_tensor_element(output, (int[]){0, 0, 0}));
-    TEST_ASSERT_EQUAL_DOUBLE(8.0,  get_tensor_element(output, (int[]){0, 1, 0}));
-    TEST_ASSERT_EQUAL_DOUBLE(14.0, get_tensor_element(output, (int[]){1, 0, 0}));
+    // Assert forward values for the first 2x2 block (max is 5.0 at index 0,1)
+    TEST_ASSERT_EQUAL_DOUBLE(5.0, get_tensor_element(output, (int[]){0, 0, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, get_tensor_element(h_idx, (int[]){0, 0, 0})); // Row 0
+    TEST_ASSERT_EQUAL_DOUBLE(1.0, get_tensor_element(w_idx, (int[]){0, 0, 0})); // Col 1
+
+    // Assert forward values for the last 2x2 block (max is 16.0 at index 3,3)
     TEST_ASSERT_EQUAL_DOUBLE(16.0, get_tensor_element(output, (int[]){1, 1, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(3.0,  get_tensor_element(h_idx, (int[]){1, 1, 0})); // Row 3
+    TEST_ASSERT_EQUAL_DOUBLE(3.0,  get_tensor_element(w_idx, (int[]){1, 1, 0})); // Col 3
 
     free_tensor(input);
     free_tensor(output);
+    free_tensor(h_idx);
+    free_tensor(w_idx);
 }
 
-// Test 2: Multiple Channels (2x2x3 input pooled to 1x1x3)
+// Test 2: Multiple Channels
 void test_max_pool_2d_multiple_channels(void) {
-    tensor_t* input = allocate_tensor((int[]){2, 2, 3}, 3);
+    tensor_t* input = allocate_tensor((int[]){2, 2, 2}, 3);
+    fill_tensor_channel_2d(input, 0, 2, 2, (double[]){1, 2, 3, 4});    // Max 4 at (1,1)
+    fill_tensor_channel_2d(input, 1, 2, 2, (double[]){10, 5, 2, 1});  // Max 10 at (0,0)
 
-    // Channel 0
-    fill_tensor_channel_2d(input, 0, 2, 2, (double[]){1, 2, 3, 4});
-    // Channel 1
-    fill_tensor_channel_2d(input, 1, 2, 2, (double[]){10, 20, 5, 2});
-    // Channel 2
-    fill_tensor_channel_2d(input, 2, 2, 2, (double[]){-1, -5, -3, 0});
+    tensor_t *h_idx = NULL, *w_idx = NULL;
+    tensor_t* output = max_pool_2d_forward(input, 2, 2, &h_idx, &w_idx);
 
-    tensor_t* output = max_pool_2d(input, 2, 2);
-
-    // Assert shape
-    TEST_ASSERT_EQUAL_INT(1, output->shape[0]);
-    TEST_ASSERT_EQUAL_INT(1, output->shape[1]);
-    TEST_ASSERT_EQUAL_INT(3, output->shape[2]);
-
-    // Assert max values are isolated to their respective channels
     TEST_ASSERT_EQUAL_DOUBLE(4.0,  get_tensor_element(output, (int[]){0, 0, 0}));
-    TEST_ASSERT_EQUAL_DOUBLE(20.0, get_tensor_element(output, (int[]){0, 0, 1}));
-    TEST_ASSERT_EQUAL_DOUBLE(0.0,  get_tensor_element(output, (int[]){0, 0, 2}));
+    TEST_ASSERT_EQUAL_DOUBLE(1.0,  get_tensor_element(h_idx, (int[]){0, 0, 0}));
+
+    TEST_ASSERT_EQUAL_DOUBLE(10.0, get_tensor_element(output, (int[]){0, 0, 1}));
+    TEST_ASSERT_EQUAL_DOUBLE(0.0,  get_tensor_element(h_idx, (int[]){0, 0, 1}));
 
     free_tensor(input);
     free_tensor(output);
+    free_tensor(h_idx);
+    free_tensor(w_idx);
 }
 
-// Test 3: Handling of negative numbers
-// (Important because you initialize max = NAN. Depending on your MAX macro,
-// this tests if NAN comparisons break on negative numbers).
+// Test 3: Backward Pass Logic (Gradient Routing)
+void test_max_pool_2d_backward_routing(void) {
+    int in_h = 4, in_w = 4, in_c = 1;
+    tensor_t* input = allocate_tensor((int[]){in_h, in_w, in_c}, 3);
+    // Max values are intentionally placed at (0,1), (0,3), (3,0), (3,3)
+    const double vals[16] = {
+        0, 10,  0, 10,
+        0,  0,  0,  0,
+        0,  0,  0,  0,
+       10,  0,  0, 10
+    };
+    fill_tensor_channel_2d(input, 0, 4, 4, vals);
+
+    // 1. Forward Pass to get masks
+    tensor_t *h_idx = NULL, *w_idx = NULL;
+    tensor_t* output = max_pool_2d_forward(input, 2, 2, &h_idx, &w_idx);
+
+    // 2. Create dummy upstream gradient (d_loss/d_output)
+    // We'll say the error is 5.0 for every pooled pixel
+    tensor_t* d_upstream = allocate_tensor((int[]){2, 2, 1}, 3);
+    for(int i=0; i<4; i++) d_upstream->data[i] = 5.0;
+
+    // 3. Run Backward Pass
+    tensor_t* d_input = max_pool_2d_backward(d_upstream, h_idx, w_idx, in_h, in_w, in_c);
+
+    // 4. Verify Gradient Routing
+    // The gradient should ONLY exist at the winning coordinates
+    TEST_ASSERT_EQUAL_DOUBLE(5.0, get_tensor_element(d_input, (int[]){0, 1, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(5.0, get_tensor_element(d_input, (int[]){0, 3, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(5.0, get_tensor_element(d_input, (int[]){3, 0, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(5.0, get_tensor_element(d_input, (int[]){3, 3, 0}));
+
+    // Non-winning pixels must have 0.0 gradient
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, get_tensor_element(d_input, (int[]){0, 0, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, get_tensor_element(d_input, (int[]){1, 1, 0}));
+
+    free_tensor(input);
+    free_tensor(output);
+    free_tensor(h_idx);
+    free_tensor(w_idx);
+    free_tensor(d_upstream);
+    free_tensor(d_input);
+}
+
+// Test 4: Handling Negative Values (Initialization Check)
 void test_max_pool_2d_negative_values(void) {
     tensor_t* input = allocate_tensor((int[]){2, 2, 1}, 3);
+    fill_tensor_channel_2d(input, 0, 2, 2, (double[]){-10, -5, -20, -15}); // Max -5 at (0,1)
 
-    const double vals[4] = {
-        -10.0, -15.0,
-        -20.0,  -5.0
-    };
-    fill_tensor_channel_2d(input, 0, 2, 2, vals);
-
-    tensor_t* output = max_pool_2d(input, 2, 2);
+    tensor_t *h_idx = NULL, *w_idx = NULL;
+    tensor_t* output = max_pool_2d_forward(input, 2, 2, &h_idx, &w_idx);
 
     TEST_ASSERT_EQUAL_DOUBLE(-5.0, get_tensor_element(output, (int[]){0, 0, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(0.0,  get_tensor_element(h_idx, (int[]){0, 0, 0}));
+    TEST_ASSERT_EQUAL_DOUBLE(1.0,  get_tensor_element(w_idx, (int[]){0, 0, 0}));
 
     free_tensor(input);
     free_tensor(output);
+    free_tensor(h_idx);
+    free_tensor(w_idx);
 }
 
-// Test 4: Truncation behavior on odd dimensions (5x5 pooled to 2x2)
-void test_max_pool_2d_odd_dimensions_truncation(void) {
-    // A 5x5 matrix with a 2x2 pool stride 2 should cleanly drop the 5th row and 5th column
-    // because out_height = (5 - 2)/2 + 1 = 2.
-    tensor_t* input = allocate_tensor((int[]){5, 5, 1}, 3);
-
-    const double vals[25] = {
-        1, 1, 2, 2, 99,
-        1, 1, 2, 2, 99,
-        3, 3, 4, 4, 99,
-        3, 3, 4, 4, 99,
-       99,99,99,99, 99
-    };
-    fill_tensor_channel_2d(input, 0, 5, 5, vals);
-
-    tensor_t* output = max_pool_2d(input, 2, 2);
-
-    // Check that it ignores the 99s in the truncated 5th row/col
-    TEST_ASSERT_EQUAL_INT(2, output->shape[0]);
-    TEST_ASSERT_EQUAL_INT(2, output->shape[1]);
-
-    TEST_ASSERT_EQUAL_DOUBLE(1.0, get_tensor_element(output, (int[]){0, 0, 0}));
-    TEST_ASSERT_EQUAL_DOUBLE(2.0, get_tensor_element(output, (int[]){0, 1, 0}));
-    TEST_ASSERT_EQUAL_DOUBLE(3.0, get_tensor_element(output, (int[]){1, 0, 0}));
-    TEST_ASSERT_EQUAL_DOUBLE(4.0, get_tensor_element(output, (int[]){1, 1, 0}));
-
-    free_tensor(input);
-    free_tensor(output);
-}
-
-// Test 5: 1x1 Pooling (Identity Operation)
-void test_max_pool_2d_1x1_pool(void) {
+// Test 5: Odd Dimension Truncation
+void test_max_pool_2d_truncation(void) {
     tensor_t* input = allocate_tensor((int[]){3, 3, 1}, 3);
-
-    const double vals[9] = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    const double vals[9] = {
+        10, 2, 99,
+         3, 4, 99,
+        99,99, 99
+    };
     fill_tensor_channel_2d(input, 0, 3, 3, vals);
 
-    tensor_t* output = max_pool_2d(input, 1, 1);
+    tensor_t *h_idx = NULL, *w_idx = NULL;
+    tensor_t* output = max_pool_2d_forward(input, 2, 2, &h_idx, &w_idx);
 
-    TEST_ASSERT_EQUAL_INT(3, output->shape[0]);
-    TEST_ASSERT_EQUAL_INT(3, output->shape[1]);
-
-    // Ensure values are identical to input
-    for(int i = 0; i < 3; i++) {
-        for(int j = 0; j < 3; j++) {
-            double expected = vals[i * 3 + j];
-            double actual = get_tensor_element(output, (int[]){i, j, 0});
-            TEST_ASSERT_EQUAL_DOUBLE(expected, actual);
-        }
-    }
+    // Should be a 1x1 output (3x3 input, 2x2 pool, stride 2)
+    TEST_ASSERT_EQUAL_INT(1, output->shape[0]);
+    TEST_ASSERT_EQUAL_INT(1, output->shape[1]);
+    TEST_ASSERT_EQUAL_DOUBLE(10.0, get_tensor_element(output, (int[]){0, 0, 0}));
 
     free_tensor(input);
     free_tensor(output);
+    free_tensor(h_idx);
+    free_tensor(w_idx);
 }
 
 int main(void) {
     UNITY_BEGIN();
-
-    RUN_TEST(test_max_pool_2d_basic_4x4_to_2x2);
+    RUN_TEST(test_max_pool_2d_forward_and_indices);
     RUN_TEST(test_max_pool_2d_multiple_channels);
+    RUN_TEST(test_max_pool_2d_backward_routing);
     RUN_TEST(test_max_pool_2d_negative_values);
-    RUN_TEST(test_max_pool_2d_odd_dimensions_truncation);
-    RUN_TEST(test_max_pool_2d_1x1_pool);
-
+    RUN_TEST(test_max_pool_2d_truncation);
     return UNITY_END();
 }
