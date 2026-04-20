@@ -48,7 +48,7 @@ void test_dense_forward_pass_math(void) {
     biases[0] = 0.5;
     biases[1] = -0.5;
 
-    output_tensor = dense_layer_forward_pass(input_tensor, 2, weights_array, biases);
+    output_tensor = dense_layer_forward_pass(input_tensor, 2, weights_array, biases, RELU);
 
     TEST_ASSERT_NOT_NULL(output_tensor);
     TEST_ASSERT_EQUAL_INT(1, output_tensor->ndim);
@@ -63,7 +63,7 @@ void test_dense_null_input_handling(void) {
     tensor_t* weights_array[] = {dummy_weight};
     double dummy_bias = 0.0;
 
-    tensor_t* result = dense_layer_forward_pass(NULL, 1, weights_array, &dummy_bias);
+    tensor_t* result = dense_layer_forward_pass(NULL, 1, weights_array, &dummy_bias, RELU);
 
     TEST_ASSERT_NULL(result);
     free_tensor(dummy_weight);
