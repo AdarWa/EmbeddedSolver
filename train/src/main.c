@@ -44,7 +44,7 @@ int main() {
         LOG_F(TAG, "Found invalid dataset count!");
     }
 
-    train_model(model_train_config, &train_data);
+    train_model(model_train_config, &train_data, &test_data);
 
     // Cleanup
     mnist_free_dataset(&train_data);
