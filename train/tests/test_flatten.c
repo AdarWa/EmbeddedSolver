@@ -83,6 +83,40 @@ void test_flatten_3d_tensor(void) {
     free_tensor(flat);
 }
 
+void test_flatten_backward_pass(void) {
+    // 1. Setup Mock Original Input (2x2x2)
+    int shape[] = {2, 2, 2};
+    tensor_t* original_input = allocate_tensor(shape, 3);
+
+    // 2. Setup Upstream Gradient (1D vector of length 8)
+    // Let's say the gradient coming from the Dense layer is [1, 2, 3, 4, 5, 6, 7, 8]
+    tensor_t* d_upstream = allocate_tensor((int[]){8}, 1);
+    for (int i = 0; i < 8; i++) {
+        int idx = i;
+        set_tensor_element(d_upstream, &idx, (double)(i + 1));
+    }
+
+    // 3. Execute Backward Pass
+    tensor_t* d_input = unflatten_tensor_backward(d_upstream, original_input);
+
+    // 4. Assertions
+    TEST_ASSERT_NOT_NULL(d_input);
+    TEST_ASSERT_EQUAL_INT(3, d_input->ndim);
+    TEST_ASSERT_EQUAL_INT(2, d_input->shape[0]);
+    TEST_ASSERT_EQUAL_INT(2, d_input->shape[2]);
+
+    // Check specific mapping (Assuming H-W-C order from your iterator)
+    // index 0,0,0 should be 1.0
+    TEST_ASSERT_EQUAL_DOUBLE(1.0, get_tensor_element(d_input, (int[]){0, 0, 0}));
+    // index 1,1,1 should be 8.0
+    TEST_ASSERT_EQUAL_DOUBLE(8.0, get_tensor_element(d_input, (int[]){1, 1, 1}));
+
+    // Cleanup
+    free_tensor(original_input);
+    free_tensor(d_upstream);
+    free_tensor(d_input);
+}
+
 int main(void) {
     UNITY_BEGIN();
 
@@ -90,6 +124,7 @@ int main(void) {
     RUN_TEST(test_flatten_1d_tensor);
     RUN_TEST(test_flatten_2d_tensor);
     RUN_TEST(test_flatten_3d_tensor);
+    RUN_TEST(test_flatten_backward_pass);
 
     return UNITY_END();
 }
