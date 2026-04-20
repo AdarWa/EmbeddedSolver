@@ -4,6 +4,7 @@
 
 #include "tensor.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
@@ -140,4 +141,18 @@ double tensor_dot_product(const tensor_t* a, const tensor_t* b) {
     }
 
     return result;
+}
+
+tensor_t* tensor_transpose(const tensor_t* input) {
+    assert(input->ndim == 3);
+    int m = input->shape[0];
+    int n = input->shape[1];
+    tensor_t* output = allocate_tensor((int[]){n,m,input->shape[2]},3);
+    for (int i = 0; i < m; i++){
+        for (int j = 0; j < n; j++){
+            double val = get_tensor_element(input, (int[]){i,j,0});
+            set_tensor_element(output, (int[]){j,i,0}, val);
+        }
+    }
+    return output;
 }

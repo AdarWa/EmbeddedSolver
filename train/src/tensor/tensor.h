@@ -17,3 +17,4 @@ double get_tensor_element(const tensor_t* tensor, const int* element_idx);
 void set_tensor_element(tensor_t* tensor, const int* element_idx, double value);
 tensor_t* tensor_extract_patch(const tensor_t* src, int y, int x, int n);
 double tensor_dot_product(const tensor_t* a, const tensor_t* b);
+tensor_t* tensor_transpose(const tensor_t* input);
