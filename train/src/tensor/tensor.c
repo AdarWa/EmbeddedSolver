@@ -156,3 +156,16 @@ tensor_t* tensor_transpose(const tensor_t* input) {
     }
     return output;
 }
+
+void tensor_zero(const tensor_t* input) {
+    size_t total_elements = 1;
+    int current_stride = 1;
+    for (int i = input->ndim - 1; i >= 0; i--) {
+        current_stride *= input->shape[i];
+    }
+    total_elements = (size_t)current_stride;
+
+    for (size_t i = 0; i < total_elements; i++) {
+        input->data[i] = 0;
+    }
+}
