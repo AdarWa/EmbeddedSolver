@@ -38,6 +38,8 @@ tensor_t* conv2d_forward_pass(const tensor_t* input_tensor, tensor_t** weights, 
                     }
                 }
 
+                free_tensor(image_patch);
+
                 double z = dot_product + current_bias;
 
                 double activated_value = MAX(0, z); // RELU
