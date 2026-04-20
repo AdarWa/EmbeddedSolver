@@ -43,23 +43,6 @@ static void zero_weights(weights_t* w) {
     }
 }
 
-static void save_weights(weights_t* w) {
-    FILE *file = fopen("weights.bin", "wb");
-
-    if (file == NULL) {
-        LOG_E(TAG, "Could not open file for writing");
-        return;
-    }
-
-    size_t written = fwrite(w, sizeof(weights_t), 1, file);
-
-    if (written != 1) {
-        perror("Error: Failed to write data to file");
-    }
-
-    fclose(file);
-}
-
 /*
  * This function trains the model. The same in TensorFlow would be the following:
  *
@@ -81,7 +64,8 @@ static void save_weights(weights_t* w) {
  *
  * model.add(Dense(10, activation='softmax'))
  **/
-void train_model(model_train_config_t config, mnist_dataset_t* train) {
+void train_model(model_train_config_t config, mnist_dataset_t* train, mnist_dataset_t* test) {
+    train->count = 1000;
     weights_t weights = allocate_weights(&config);
 
     // Allocate a structure to hold accumulated gradients for the batch (init to 0)
@@ -221,7 +205,8 @@ void train_model(model_train_config_t config, mnist_dataset_t* train) {
     save_weights(&weights);
     LOG_I(TAG, "Saved weights to file!");
 
-    LOG_I(TAG, "Model Accuracy: %f", evaluate_accuracy(config, &weights, train));
+    LOG_I(TAG, "Testing on a %d test dataset", test->count);
+    LOG_I(TAG, "Model Accuracy: %f", evaluate_accuracy(config, &weights, test));
 
     free_weights(&weights);
     free_weights(&batch_gradients);
