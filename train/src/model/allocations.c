@@ -127,3 +127,37 @@ void free_weights(weights_t* weights) {
     }
     if (weights->dense_parameters_3.biases) free(weights->dense_parameters_3.biases);
 }
+
+void save_weights(weights_t* w) {
+    FILE *file = fopen("weights.bin", "wb");
+
+    if (file == NULL) {
+        LOG_E(TAG, "Could not open file for writing");
+        return;
+    }
+
+    size_t written = fwrite(w, sizeof(weights_t), 1, file);
+
+    if (written != 1) {
+        LOG_E(TAG, "Failed to write data to file");
+    }
+
+    fclose(file);
+}
+
+void load_weights(weights_t* w) {
+    FILE *file = fopen("weights.bin", "rb");
+
+    if (file == NULL) {
+        LOG_E(TAG, "Could not open file for reading");
+        return;
+    }
+
+    size_t read_count = fread(w, sizeof(weights_t), 1, file);
+
+    if (read_count != 1) {
+        LOG_E(TAG, "Failed to read data from file");
+    }
+
+    fclose(file);
+}

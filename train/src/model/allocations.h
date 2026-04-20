@@ -39,3 +39,5 @@ typedef struct {
 
 weights_t allocate_weights(model_train_config_t* config);
 void free_weights(weights_t* weights);
+void save_weights(weights_t* w);
+void load_weights(weights_t* w);
