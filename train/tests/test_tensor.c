@@ -146,6 +146,52 @@ void test_tensor_extract_patch_invalid(void) {
     free_tensor(src);
 }
 
+void test_tensor_zero_basic(void) {
+    int shape[] = {2, 2};
+    tensor_t* t = allocate_tensor(shape, 2);
+
+    // Fill with non-zero values
+    int idx00[] = {0, 0};
+    int idx11[] = {1, 1};
+    set_tensor_element(t, idx00, 123.45);
+    set_tensor_element(t, idx11, 67.89);
+
+    // Ensure they were actually set
+    TEST_ASSERT_EQUAL_DOUBLE(123.45, get_tensor_element(t, idx00));
+
+    // Zero the tensor
+    tensor_zero(t);
+
+    // Verify all elements (flat check)
+    int total_elements = 1;
+    for(int i = 0; i < t->ndim; i++) total_elements *= t->shape[i];
+
+    for(int i = 0; i < total_elements; i++) {
+        TEST_ASSERT_EQUAL_DOUBLE(0.0, t->data[i]);
+    }
+
+    free_tensor(t);
+}
+
+void test_tensor_zero_integrity(void) {
+    int shape[] = {3, 5};
+    int ndim = 2;
+    tensor_t* t = allocate_tensor(shape, ndim);
+
+    // Capture metadata before zeroing
+    int original_stride0 = t->strides[0];
+    int original_shape0 = t->shape[0];
+
+    tensor_zero(t);
+
+    // Verify metadata was not corrupted/overwritten
+    TEST_ASSERT_EQUAL_INT(ndim, t->ndim);
+    TEST_ASSERT_EQUAL_INT(original_shape0, t->shape[0]);
+    TEST_ASSERT_EQUAL_INT(original_stride0, t->strides[0]);
+
+    free_tensor(t);
+}
+
 // --- Main Runner ---
 
 int main(void) {
@@ -158,6 +204,8 @@ int main(void) {
     RUN_TEST(test_tensor_dot_product_mismatch);
     RUN_TEST(test_tensor_extract_patch);
     RUN_TEST(test_tensor_extract_patch_invalid);
+    RUN_TEST(test_tensor_zero_basic);
+    RUN_TEST(test_tensor_zero_integrity);
 
     return UNITY_END();
 }
