@@ -48,3 +48,56 @@ tensor_t* conv2d_forward_pass(const tensor_t* input_tensor, tensor_t** weights, 
     }
     return output_tensor;
 }
+
+tensor_t* conv2d_backward_pass(const tensor_t* d_out, const tensor_t* input,
+                               const tensor_t* output_forward, tensor_t** weights,
+                               tensor_t** d_weights, double* d_biases,
+                               int num_filters, int kernel_size) {
+
+    int in_h = input->shape[0];
+    int in_w = input->shape[1];
+    int in_c = input->shape[2];
+
+    int out_h = d_out->shape[0];
+    int out_w = d_out->shape[1];
+
+    tensor_t* d_input = allocate_tensor((int[]){in_h, in_w, in_c}, 3);
+
+    for (int f = 0; f < num_filters; f++) {
+        tensor_t* current_filter = weights[f];
+        tensor_t* current_d_filter = d_weights[f];
+
+        for (int y = 0; y < out_h; y++) {
+            for (int x = 0; x < out_w; x++) {
+
+                double forward_val = get_tensor_element(output_forward, (int[]){y, x, f});
+                if (forward_val <= 0) continue;
+
+                double upstream_grad = get_tensor_element(d_out, (int[]){y, x, f});
+
+                // d_bias = sum of upstream gradients
+                d_biases[f] += upstream_grad;
+
+                for (int i = 0; i < kernel_size; i++) {
+                    for (int j = 0; j < kernel_size; j++) {
+                        for (int c = 0; c < in_c; c++) {
+
+                            double pixel_val = get_tensor_element(input, (int[]){y + i, x + j, c});
+                            double weight_val = get_tensor_element(current_filter, (int[]){i, j, c});
+
+                            // d_L/d_W = input * upstream_grad
+                            double current_dw = get_tensor_element(current_d_filter, (int[]){i, j, c});
+                            set_tensor_element(current_d_filter, (int[]){i, j, c}, current_dw + (pixel_val * upstream_grad));
+
+                            // d_L/d_X = weight * upstream_grad
+                            double current_dx = get_tensor_element(d_input, (int[]){y + i, x + j, c});
+                            set_tensor_element(d_input, (int[]){y + i, x + j, c}, current_dx + (weight_val * upstream_grad));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return d_input;
+}
