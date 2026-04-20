@@ -86,7 +86,7 @@ void train_model(model_train_config_t config, mnist_dataset_t* train) {
             for (int i = 0; i < batch.cnt; i++) {
                 tensor_t* input = batch.images[i].pixels;
                 uint8_t target_label = batch.labels[i];
-                LOG_D(TAG, "[Epoch %d] Processing image %d in batch %d, target label %d", epoch, i, b, target_label);
+                LOG_I(TAG, "[Epoch %d/%d] Processing image %d/%d in batch %d/%d, target label %d", epoch, config.epochs, i, batch.cnt, b, batch_cnt, target_label);
 
                 tensor_t* conv1_output = conv2d_forward_pass(input, weights.conv_parameters_1.weights, weights.conv_parameters_1.biases, config.filter_cnt_1, config.kernel_size);
 
@@ -195,10 +195,10 @@ void train_model(model_train_config_t config, mnist_dataset_t* train) {
                 free_tensor(d_conv1); free_tensor(d_input);
             }
         }
-        LOG_I(TAG, "Finished epoch %d/%d. Took %d ms", epoch, config.epochs ,time(NULL) - epoch_ts);
+        LOG_I(TAG, "Finished epoch %d/%d. Took %d seconds", epoch, config.epochs ,time(NULL) - epoch_ts);
     }
 
-    LOG_I(TAG, "Finished Training! Ran through %d epoches", config.epochs);
+    LOG_I(TAG, "Finished Training! Ran through %d epoches. Took %d seconds.", config.epochs, time(NULL) - ts);
 
     free_weights(&weights);
     free_weights(&batch_gradients);
