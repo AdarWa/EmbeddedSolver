@@ -17,6 +17,7 @@ typedef enum {
     L_FATAL
 } LogLevel;
 
+void set_log_level(LogLevel level);
 void log_msg(LogLevel level, const char *tag, const char *fmt, ...);
 
 #define LOG_D(tag, ...) log_msg(L_DEBUG, tag, __VA_ARGS__)
