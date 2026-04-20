@@ -7,6 +7,7 @@
 #include "backpropagation.h"
 #include "batch.h"
 #include "dataset/img_handler/img_handler.h"
+#include "evaluation/evaluation.h"
 #include "filters/conv_2d.h"
 #include "filters/flatten.h"
 #include "filters/max_pool_2d.h"
@@ -40,6 +41,23 @@ static void zero_weights(weights_t* w) {
     for (int i = 0; i < w->dense_parameters_3.count; i++) {
         w->dense_parameters_3.biases[i] = 0;
     }
+}
+
+static void save_weights(weights_t* w) {
+    FILE *file = fopen("weights.bin", "wb");
+
+    if (file == NULL) {
+        LOG_E(TAG, "Could not open file for writing");
+        return;
+    }
+
+    size_t written = fwrite(w, sizeof(weights_t), 1, file);
+
+    if (written != 1) {
+        perror("Error: Failed to write data to file");
+    }
+
+    fclose(file);
 }
 
 /*
@@ -199,6 +217,11 @@ void train_model(model_train_config_t config, mnist_dataset_t* train) {
     }
 
     LOG_I(TAG, "Finished Training! Ran through %d epoches. Took %d seconds.", config.epochs, time(NULL) - ts);
+
+    save_weights(&weights);
+    LOG_I(TAG, "Saved weights to file!");
+
+    LOG_I(TAG, "Model Accuracy: %f", evaluate_accuracy(config, &weights, train));
 
     free_weights(&weights);
     free_weights(&batch_gradients);
