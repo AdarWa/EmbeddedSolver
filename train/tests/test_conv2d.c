@@ -163,10 +163,108 @@ void test_conv2d_forward_pass_multiple_filters(void) {
     free_tensor(output);
 }
 
+void test_conv2d_backward_pass_basic(void) {
+    // 1. Setup Input: 3x3x1 image of all 1.0s
+    tensor_t* input = allocate_tensor((int[]){3, 3, 1}, 3);
+    for(int i=0; i<9; i++) input->data[i] = 1.0;
+
+    // 2. Setup Weights: One 2x2x1 filter of all 2.0s
+    int num_filters = 1;
+    int kernel_size = 2;
+    tensor_t* filter0 = allocate_tensor((int[]){2, 2, 1}, 3);
+    for(int i=0; i<4; i++) filter0->data[i] = 2.0;
+    tensor_t* weights[] = { filter0 };
+
+    // 3. Setup Biases: 0.0
+    double biases[] = { 0.0 };
+
+    // 4. Run Forward Pass (to get output_forward needed for ReLU check)
+    tensor_t* output_forward = conv2d_forward_pass(input, weights, biases, num_filters, kernel_size);
+
+    // 5. Setup Upstream Gradient (d_out): 2x2x1 of all 5.0s
+    tensor_t* d_out = allocate_tensor((int[]){2, 2, 1}, 3);
+    for(int i=0; i<4; i++) d_out->data[i] = 5.0;
+
+    // 6. Setup Gradient Accumulators (Initialized to 0)
+    tensor_t* d_filter0 = allocate_tensor((int[]){2, 2, 1}, 3);
+    tensor_t* d_weights[] = { d_filter0 };
+    double d_biases[] = { 0.0 };
+
+    // 7. Execute Backward Pass
+    tensor_t* d_input = conv2d_backward_pass(d_out, input, output_forward, weights,
+                                             d_weights, d_biases, num_filters, kernel_size);
+
+    // --- ASSERTIONS ---
+
+    // Bias Gradient: Sum of upstream gradients (5.0 * 4 pixels = 20.0)
+    TEST_ASSERT_EQUAL_DOUBLE(20.0, d_biases[0]);
+
+    // Weight Gradient: pixel_val (1.0) * upstream_grad (5.0) * 4 window positions = 20.0
+    TEST_ASSERT_EQUAL_DOUBLE(20.0, get_tensor_element(d_weights[0], (int[]){0, 0, 0}));
+
+    // Input Gradient: The center pixel (1,1) is covered by all four 2x2 window positions.
+    // Each position contributes (weight=2.0 * upstream_grad=5.0) = 10.0.
+    // Total for center pixel should be 10.0 * 4 = 40.0.
+    TEST_ASSERT_EQUAL_DOUBLE(40.0, get_tensor_element(d_input, (int[]){1, 1, 0}));
+
+    // Edge pixel (0,0) is only covered by one window position.
+    // Total should be 2.0 * 5.0 = 10.0.
+    TEST_ASSERT_EQUAL_DOUBLE(10.0, get_tensor_element(d_input, (int[]){0, 0, 0}));
+
+    // Cleanup
+    free_tensor(input);
+    free_tensor(filter0);
+    free_tensor(output_forward);
+    free_tensor(d_out);
+    free_tensor(d_filter0);
+    free_tensor(d_input);
+}
+
+void test_conv2d_backward_relu_blocking(void) {
+    // Input is positive, but weight is negative enough to make Z negative.
+    tensor_t* input = allocate_tensor((int[]){1, 1, 1}, 3);
+    set_tensor_element(input, (int[]){0,0,0}, 10.0);
+
+    tensor_t* filter0 = allocate_tensor((int[]){1, 1, 1}, 3);
+    set_tensor_element(filter0, (int[]){0,0,0}, -1.0); // 10 * -1 = -10
+
+    tensor_t* weights[] = { filter0 };
+    double biases[] = { 0.0 };
+
+    // Forward pass: Result is MAX(0, -10) = 0.0
+    tensor_t* output_forward = conv2d_forward_pass(input, weights, biases, 1, 1);
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, get_tensor_element(output_forward, (int[]){0,0,0}));
+
+    // Upstream Gradient is 100.0
+    tensor_t* d_out = allocate_tensor((int[]){1, 1, 1}, 3);
+    set_tensor_element(d_out, (int[]){0,0,0}, 100.0);
+
+    tensor_t* d_filter0 = allocate_tensor((int[]){1, 1, 1}, 3);
+    double d_biases[] = { 0.0 };
+
+    // Execute Backward
+    tensor_t* d_input = conv2d_backward_pass(d_out, input, output_forward, weights,
+                                             (tensor_t*[]){d_filter0}, d_biases, 1, 1);
+
+    // Because output_forward was 0, ALL gradients for this pixel should be 0.
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, d_biases[0]);
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, get_tensor_element(d_filter0, (int[]){0,0,0}));
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, get_tensor_element(d_input, (int[]){0,0,0}));
+
+    free_tensor(input);
+    free_tensor(filter0);
+    free_tensor(output_forward);
+    free_tensor(d_out);
+    free_tensor(d_filter0);
+    free_tensor(d_input);
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_conv2d_forward_pass_basic_2x2_kernel);
     RUN_TEST(test_conv2d_forward_pass_relu_activation);
     RUN_TEST(test_conv2d_forward_pass_multiple_filters);
+    RUN_TEST(test_conv2d_backward_pass_basic);
+    RUN_TEST(test_conv2d_backward_relu_blocking);
     return UNITY_END();
 }
