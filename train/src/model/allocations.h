@@ -11,9 +11,15 @@ typedef struct {
     int batch_size;
     int channel_cnt;
     int img_size;
-    int filter_cnt;
+    int filter_cnt_1;
+    int filter_cnt_2;
     int kernel_size;
-    int dense_cnt;
+    int max_pool_size;
+    int dense_cnt_1;
+    int dense_cnt_2;
+    int dense_cnt_3;
+    double dropout_rate_1;
+    double dropout_rate_2;
 } model_train_config_t;
 
 typedef struct {
@@ -24,8 +30,11 @@ typedef struct {
 
 
 typedef struct {
-    cost_parameters_t conv_parameters;
-    cost_parameters_t dense_parameters;
+    cost_parameters_t conv_parameters_1;
+    cost_parameters_t conv_parameters_2;
+    cost_parameters_t dense_parameters_1;
+    cost_parameters_t dense_parameters_2;
+    cost_parameters_t dense_parameters_3;
 } weights_t;
 
 weights_t allocate_weights(model_train_config_t* config);
