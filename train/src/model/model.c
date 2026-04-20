@@ -202,4 +202,5 @@ void train_model(model_train_config_t config, mnist_dataset_t* train) {
 
     free_weights(&weights);
     free_weights(&batch_gradients);
+    free_batches(batches, batch_cnt);
 }

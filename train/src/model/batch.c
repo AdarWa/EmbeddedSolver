@@ -50,3 +50,16 @@ batch_t* get_batches(mnist_dataset_t* dataset, int batch_size) {
 
     return batches;
 }
+
+void free_batches(batch_t* batches, uint32_t batch_cnt) {
+    if (batches == NULL) {
+        return;
+    }
+
+    for (uint32_t i = 0; i < batch_cnt; i++) {
+        free(batches[i].images);
+        free(batches[i].labels);
+    }
+
+    free(batches);
+}

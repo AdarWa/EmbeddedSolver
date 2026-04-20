@@ -16,3 +16,5 @@ typedef struct {
 uint32_t get_batch_count(mnist_dataset_t* dataset, int batch_size);
 
 batch_t* get_batches(mnist_dataset_t* dataset, int batch_size);
+
+void free_batches(batch_t* batches, uint32_t batch_cnt);
