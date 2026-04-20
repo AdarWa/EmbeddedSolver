@@ -25,6 +25,8 @@ static const model_train_config_t model_train_config = {
 };
 
 int main() {
+    set_log_level(L_INFO);
+
     if (!remote_all_data_exists()) {
         remote_init();
         remote_fetch_all();
