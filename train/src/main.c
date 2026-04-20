@@ -11,6 +11,7 @@ static const char* TAG = "main";
 static const model_train_config_t model_train_config = {
     .epochs = 10,
     .batch_size = 120,
+    .max_pool_size = 2,
     .channel_cnt = 1,
     .img_size = 28,
     .filter_cnt_1 = 32,
