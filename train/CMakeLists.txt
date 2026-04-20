@@ -17,6 +17,10 @@ add_executable(train src/main.c ${LIB_SRCS})
 target_link_libraries(train PRIVATE CURL::libcurl ZLIB::ZLIB m)
 target_include_directories(train PRIVATE src)
 
+add_executable(evaluate_weights src/evaluate_weights.c ${LIB_SRCS})
+target_link_libraries(evaluate_weights PRIVATE CURL::libcurl ZLIB::ZLIB m)
+target_include_directories(evaluate_weights PRIVATE src)
+
 enable_testing()
 include(FetchContent)
 include(CTest)
