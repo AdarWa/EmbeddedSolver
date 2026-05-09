@@ -19,7 +19,7 @@ static const char* TAG = "model";
 static void zero_weights(weights_t* w) {
     tensor_zero(*w->conv_parameters_1.weights);
     for (int i = 0; i < w->conv_parameters_1.count; i++) {
-        w->conv_parameters_2.biases[i] = 0;
+        w->conv_parameters_1.biases[i] = 0;
     }
 
     tensor_zero(*w->conv_parameters_2.weights);
