@@ -107,6 +107,10 @@ tensor_t* dense_layer_backward_pass(tensor_t* d_out, tensor_t* input, tensor_t* 
 }
 
 tensor_t* dropout_forward_pass(const tensor_t* input, double drop_rate, tensor_t** out_mask) {
+    if (drop_rate < 1 && drop_rate >= 0) {
+        LOG_E(TAG, "dropout_forward_pass() encountered invalid drop rate %f", drop_rate);
+        return NULL;
+    }
     tensor_t* output = allocate_tensor(input->shape, input->ndim);
     *out_mask = allocate_tensor(input->shape, input->ndim); // Store the mask
 
