@@ -43,6 +43,44 @@ static void zero_weights(weights_t* w) {
     }
 }
 
+static void apply_tensor_gradients(tensor_t* w, tensor_t* grad, const double lr, const uint32_t batch_size) {
+    if (!w || !grad) return;
+    long size = tensor_size(w);
+    for (long i = 0; i < size; i++) {
+        w->data[i] -= lr * (grad->data[i] / (double)batch_size);
+    }
+}
+
+static void apply_bias_gradients(double* biases, const double* grad_biases, const int count, const double lr, uint32_t batch_size) {
+    if (!biases || !grad_biases) return;
+
+    for (int i = 0; i < count; i++) {
+        biases[i] -= lr * (grad_biases[i] / (double)batch_size);
+    }
+}
+
+static void apply_model_gradients(weights_t* weights, weights_t* batch_gradients, double lr, uint32_t batch_size) {
+    // Conv 1
+    apply_tensor_gradients(*weights->conv_parameters_1.weights, *batch_gradients->conv_parameters_1.weights, lr, batch_size);
+    apply_bias_gradients(weights->conv_parameters_1.biases, batch_gradients->conv_parameters_1.biases, weights->conv_parameters_1.count, lr, batch_size);
+
+    // Conv 2
+    apply_tensor_gradients(*weights->conv_parameters_2.weights, *batch_gradients->conv_parameters_2.weights, lr, batch_size);
+    apply_bias_gradients(weights->conv_parameters_2.biases, batch_gradients->conv_parameters_2.biases, weights->conv_parameters_2.count, lr, batch_size);
+
+    // Dense 1
+    apply_tensor_gradients(*weights->dense_parameters_1.weights, *batch_gradients->dense_parameters_1.weights, lr, batch_size);
+    apply_bias_gradients(weights->dense_parameters_1.biases, batch_gradients->dense_parameters_1.biases, weights->dense_parameters_1.count, lr, batch_size);
+
+    // Dense 2
+    apply_tensor_gradients(*weights->dense_parameters_2.weights, *batch_gradients->dense_parameters_2.weights, lr, batch_size);
+    apply_bias_gradients(weights->dense_parameters_2.biases, batch_gradients->dense_parameters_2.biases, weights->dense_parameters_2.count, lr, batch_size);
+
+    // Dense 3
+    apply_tensor_gradients(*weights->dense_parameters_3.weights, *batch_gradients->dense_parameters_3.weights, lr, batch_size);
+    apply_bias_gradients(weights->dense_parameters_3.biases, batch_gradients->dense_parameters_3.biases, weights->dense_parameters_3.count, lr, batch_size);
+}
+
 /*
  * This function trains the model. The same in TensorFlow would be the following:
  *
@@ -196,6 +234,7 @@ void train_model(model_train_config_t config, mnist_dataset_t* train, mnist_data
                 free_tensor(d_max_pool2); free_tensor(d_conv2); free_tensor(d_max_pool1);
                 free_tensor(d_conv1); free_tensor(d_input);
             }
+            apply_model_gradients(&weights, &batch_gradients, config.learning_rate, batch_cnt);
         }
         LOG_I(TAG, "Finished epoch %d/%d. Took %d seconds", epoch, config.epochs ,time(NULL) - epoch_ts);
     }
