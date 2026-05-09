@@ -51,6 +51,9 @@ tensor_t* dense_layer_forward_pass(tensor_t* input, int count, tensor_t** weight
         free_tensor(output);
         return activated;
     }
+    if (activation == IDENTITY) {
+        return output;
+    }
     LOG_F(TAG, "Invalid activation type in dense layer %d", activation);
     return NULL;
 }
