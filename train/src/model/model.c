@@ -103,6 +103,7 @@ static void apply_model_gradients(weights_t* weights, weights_t* batch_gradients
  * model.add(Dense(10, activation='softmax'))
  **/
 void train_model(model_train_config_t config, mnist_dataset_t* train, mnist_dataset_t* test) {
+    srand(42);
     train->count = 1000;
     weights_t weights = allocate_weights(&config);
 
