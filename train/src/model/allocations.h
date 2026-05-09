@@ -8,6 +8,7 @@
 
 typedef struct {
     int epochs;
+    double learning_rate;
     int batch_size;
     int channel_cnt;
     int img_size;
