@@ -33,8 +33,8 @@ batch_t* get_batches(mnist_dataset_t* dataset, int batch_size) {
 
         *curr = (batch_t){
             .cnt = current_batch_size,
-            .images = malloc(current_batch_size * sizeof(mnist_raw_image_t*)),
-            .labels = malloc(current_batch_size * sizeof(uint8_t*))
+            .images = malloc(current_batch_size * sizeof(mnist_raw_image_t)),
+            .labels = malloc(current_batch_size * sizeof(uint8_t))
         };
 
         if (!curr->images || !curr->labels) {
