@@ -167,3 +167,11 @@ void tensor_zero(tensor_t* input) {
     }
     memset(input->data, 0, current_stride * sizeof(double));
 }
+
+long tensor_size(const tensor_t* input) {
+    long current_stride = 1;
+    for (int i = input->ndim - 1; i >= 0; i--) {
+        current_stride *= input->shape[i];
+    }
+    return current_stride;
+}

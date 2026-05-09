@@ -19,3 +19,4 @@ tensor_t* tensor_extract_patch(const tensor_t* src, int y, int x, int n);
 double tensor_dot_product(const tensor_t* a, const tensor_t* b);
 tensor_t* tensor_transpose(const tensor_t* input);
 void tensor_zero(tensor_t* input);
+long tensor_size(const tensor_t* input);
