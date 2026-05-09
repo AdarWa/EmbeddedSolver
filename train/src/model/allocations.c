@@ -27,6 +27,14 @@ static int calculate_flattened_size(model_train_config_t* config, int input_widt
     return pool2_w * pool2_h * config->filter_cnt_2;
 }
 
+static tensor_t* randomize_weight_tensor(tensor_t* input) {
+    long size = tensor_size(input);
+    for (long i = 0; i < size; i++) {
+        input->data[i] = ((double)rand() / (double)RAND_MAX);
+    }
+    return input;
+}
+
 weights_t allocate_weights(model_train_config_t* config) {
     weights_t w = {0};
 
@@ -63,23 +71,23 @@ weights_t allocate_weights(model_train_config_t* config) {
     }
 
     for (int i = 0; i < w.conv_parameters_1.count; i++) {
-        w.conv_parameters_1.weights[i] = allocate_tensor((int[]){config->kernel_size, config->kernel_size, config->channel_cnt}, 3);
+        w.conv_parameters_1.weights[i] = randomize_weight_tensor(allocate_tensor((int[]){config->kernel_size, config->kernel_size, config->channel_cnt}, 3));
         if (!w.conv_parameters_1.weights[i]) goto tensor_alloc_err;
     }
 
     for (int i = 0; i < w.conv_parameters_2.count; i++) {
-        w.conv_parameters_2.weights[i] = allocate_tensor((int[]){config->kernel_size, config->kernel_size, config->filter_cnt_1}, 3);
+        w.conv_parameters_2.weights[i] = randomize_weight_tensor(allocate_tensor((int[]){config->kernel_size, config->kernel_size, config->filter_cnt_1}, 3));
         if (!w.conv_parameters_2.weights[i]) goto tensor_alloc_err;
     }
 
-    int flat_size = calculate_flattened_size(config, 28, 28);
-    w.dense_parameters_1.weights[0] = allocate_tensor((int[]){flat_size, config->dense_cnt_1}, 2);
+    int flat_size = calculate_flattened_size(config, config->img_size, config->img_size);
+    w.dense_parameters_1.weights[0] = randomize_weight_tensor(allocate_tensor((int[]){flat_size, config->dense_cnt_1}, 2));
     if (!w.dense_parameters_1.weights[0]) goto tensor_alloc_err;
 
-    w.dense_parameters_2.weights[0] = allocate_tensor((int[]){config->dense_cnt_1, config->dense_cnt_2}, 2);
+    w.dense_parameters_2.weights[0] = randomize_weight_tensor(allocate_tensor((int[]){config->dense_cnt_1, config->dense_cnt_2}, 2));
     if (!w.dense_parameters_2.weights[0]) goto tensor_alloc_err;
 
-    w.dense_parameters_3.weights[0] = allocate_tensor((int[]){config->dense_cnt_2, config->dense_cnt_3}, 2);
+    w.dense_parameters_3.weights[0] = randomize_weight_tensor(allocate_tensor((int[]){config->dense_cnt_2, config->dense_cnt_3}, 2));
     if (!w.dense_parameters_3.weights[0]) goto tensor_alloc_err;
 
     return w;
